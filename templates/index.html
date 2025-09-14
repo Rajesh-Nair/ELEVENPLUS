@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Vocab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Google Fonts for classy look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="/static/style.css" rel="stylesheet" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="logo">📝</span>
+      <h1>Vocab</h1>
+    </div>
+    <nav class="mode-switch">
+      <button class="tab-btn active" data-tab="wordcard">Word Card</button>
+      <button class="tab-btn" data-tab="future" disabled style="opacity:.5;cursor:not-allowed;">More Coming</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- ============== WORD CARD ============== -->
+    <section id="tab-wordcard" class="tab-panel active">
+      <div class="card">
+        <h2>🗂️ Word Card</h2>
+        <form id="word-form" class="form-grid" onsubmit="return false;">
+          <div class="field">
+            <label for="word-input">Enter a word</label>
+            <input id="word-input" type="text" placeholder="Type a word (e.g. Page¹)" autocomplete="off" />
+            <small class="help">Or <a href="#" id="show-all-link">Show All</a></small>
+          </div>
+          <div class="actions">
+            <button id="btn-search" class="btn primary">Show Card</button>
+          </div>
+        </form>
+        <div id="word-list" class="result-block" style="display:none; max-height:220px; overflow-y:auto;">
+          <h3>Word List</h3>
+          <ul id="word-list-ul" class="word-list-ul"></ul>
+        </div>
+        <div id="word-card-scroll" class="word-card-scroll" style="display:none;"></div>
+        <!-- Template for dynamic card rendering -->
+        <template id="vocab-card-template">
+          <div class="vocab-card">
+            <div class="word-title"><strong>Word :</strong> <span class="word-value"></span></div>
+            <div class="vocab-section">
+              <span class="vocab-label">Meaning :</span>
+              <span class="meaning-value"></span>
+            </div>
+            <div class="vocab-section">
+              <span class="vocab-label">Usage in a Simple Sentence :</span>
+              <span class="usage-value"></span>
+            </div>
+            <div class="vocab-section">
+              <span class="vocab-label">Ways to Remember the Meaning</span>
+              <ul class="ways-list"></ul>
+            </div>
+            <div class="vocab-section">
+              <span class="vocab-label">Synonyms & Antonyms</span>
+              <ul class="syn-ant-list"></ul>
+            </div>
+            <div class="vocab-section">
+              <span class="vocab-label">Additional facts</span>
+              <ul class="additional-list"></ul>
+            </div>
+          </div>
+        </template>
+        <!-- End template -->
+        <!-- REMOVE the static Page² card below to only show dynamic cards -->
+        <!--
+        <div class="vocab-card">
+          <div class="word-title"><strong>Word :</strong> Page<sup>2</sup></div>
+          <div class="vocab-section">
+            <span class="vocab-label">Meaning :</span>
+            <span class="meaning-value">In the context of royalty and knighthood, a page was a young boy of noble birth who served as an attendant to a king, queen, or knight. This role was often the first stage of training toward becoming a squire and later a knight. Pages performed menial tasks but also learned manners, courtly skills, and the basics of combat.</span>
+          </div>
+          <div class="vocab-section">
+            <span class="vocab-label">Usage in a Simple Sentence :</span>
+            <span>At the castle, the young page carried the knight’s shield before the tournament began.</span>
+          </div>
+          <div class="vocab-section">
+            <span class="vocab-label">Ways to Remember the Meaning</span>
+            <ul>
+              <li><strong>Etymology:</strong> From Old French <em>page</em>, Italian <em>paggio</em>, originally meaning “attendant boy,” derived from Greek <em>paidion</em> = “boy, child.”</li>
+              <li><strong>Word Break:</strong> Think of "page" as the “first page” of a knight’s career – the beginning stage.</li>
+              <li><strong>Picture:</strong> Visualize a young boy in medieval court, holding a knight’s sword and learning chivalry.</li>
+              <li><strong>Did You Know Facts?:</strong> In medieval times, boys became pages around age 7, squires around 14, and (if successful) knights at 21.</li>
+            </ul>
+          </div>
+          <div class="vocab-section">
+            <span class="vocab-label">Synonyms & Antonyms</span>
+            <ul>
+              <li><strong>Synonyms:</strong> attendant, squire (though squire is the next stage), servant, court boy</li>
+              <li><strong>Antonyms:</strong> knight, master, lord</li>
+            </ul>
+          </div>
+          <div class="vocab-section">
+            <span class="vocab-label">Additional facts</span>
+            <ul>
+              <li><strong>Homonyms/Homographs/Homophones:</strong>
+                <ul>
+                  <li><em>Page<sup>1</sup></em> (sheet of paper) and <em>Page<sup>2</sup></em> (royal attendant) are homographs (same spelling, different meaning).</li>
+                  <li>They’re homonyms too, since both meanings share the same spelling and sound.</li>
+                </ul>
+              </li>
+              <li><strong>Other Interesting Info:</strong> The role of a <em>page of honour</em> still exists in the British monarchy today. During coronations and ceremonies, pages (usually sons of nobles) assist royals by carrying trains of robes.</li>
+            </ul>
+          </div>
+        </div>
+        -->
+      </div>
+    </section>
+    <!-- ============== FUTURE TABS PLACEHOLDER ============== -->
+    <section id="tab-future" class="tab-panel">
+      <div class="card center muted" style="min-height:180px;display:flex;align-items:center;justify-content:center;">
+        More features coming soon!
+      </div>
+    </section>
+  </main>
+  <footer class="app-footer">
+    <div>© Vocab • Demo UI</div>
+    <div class="tiny">Frontend only – hook to your backend later.</div>
+  </footer>
+  <script>
+    // Tab switching
+    const tabs = document.querySelectorAll(".tab-btn");
+    const panels = document.querySelectorAll(".tab-panel");
+    tabs.forEach(btn => {
+      btn.addEventListener("click", () => {
+        tabs.forEach(b => b.classList.remove("active"));
+        panels.forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    // Fetch and show all words
+    document.getElementById("show-all-link").addEventListener("click", async e => {
+      e.preventDefault();
+      const wl = document.getElementById("word-list");
+      const showAllLink = document.getElementById("show-all-link");
+      wl.style.display = wl.style.display === "none" ? "block" : "none";
+      if (wl.style.display === "block") {
+        showAllLink.textContent = "Hide All";
+        const resp = await fetch("/api/words");
+        const words = await resp.json();
+        document.getElementById("word-list-ul").innerHTML = words.map(w =>
+          `<li><a href="#" class="word-link">${w}</a></li>`
+        ).join("");
+      } else {
+        showAllLink.textContent = "Show All";
+      }
+    });
+
+    // Show card on search
+    document.getElementById("btn-search").addEventListener("click", async e => {
+      e.preventDefault();
+      const word = document.getElementById("word-input").value.trim();
+      if (word) showWordCard(word);
+    });
+
+    // Show card on word list click
+    document.getElementById("word-list-ul").addEventListener("click", async e => {
+      if (e.target.classList.contains("word-link")) {
+        e.preventDefault();
+        showWordCard(e.target.textContent.trim());
+      }
+    });
+
+    // Render word card
+    async function showWordCard(word) {
+      const resp = await fetch(`/api/word?word=${encodeURIComponent(word.toLowerCase())}`);
+      const data = await resp.json();
+      const scroll = document.getElementById("word-card-scroll");
+      scroll.innerHTML = "";
+      if (!data.Word) {
+        scroll.style.display = "block";
+        scroll.innerHTML = `<div class="vocab-card"><div class="word-title">Word not found.</div></div>`;
+        return;
+      }
+      const tpl = document.getElementById("vocab-card-template").content.cloneNode(true);
+      tpl.querySelector(".word-value").textContent = data.Word || "";
+      tpl.querySelector(".meaning-value").textContent = data.Meaning || "";
+      tpl.querySelector(".usage-value").textContent = data.UsageInSentence || "";
+
+      // Ways to remember
+      const waysList = tpl.querySelector(".ways-list");
+      if (data.WaysToRemember) {
+        if (data.WaysToRemember.Etymology)
+          waysList.innerHTML += `<li><strong>Etymology:</strong> ${data.WaysToRemember.Etymology}</li>`;
+        if (data.WaysToRemember.WordBreak)
+          waysList.innerHTML += `<li><strong>Word Break:</strong> ${data.WaysToRemember.WordBreak}</li>`;
+        if (data.WaysToRemember.Picture)
+          waysList.innerHTML += `<li><strong>Picture:</strong> ${data.WaysToRemember.Picture}</li>`;
+        if (data.WaysToRemember.DidYouKnowFacts)
+          waysList.innerHTML += `<li><strong>Did You Know Facts?:</strong> ${data.WaysToRemember.DidYouKnowFacts}</li>`;
+      }
+
+      // Synonyms & Antonyms
+      const synAntList = tpl.querySelector(".syn-ant-list");
+      if (data.Synonyms && data.Synonyms.length)
+        synAntList.innerHTML += `<li><strong>Synonyms:</strong> ${data.Synonyms.join(", ")}</li>`;
+      if (data.Antonyms && data.Antonyms.length)
+        synAntList.innerHTML += `<li><strong>Antonyms:</strong> ${data.Antonyms.join(", ")}</li>`;
+
+      // Additional facts
+      const addList = tpl.querySelector(".additional-list");
+      if (data.AdditionalFacts && data.AdditionalFacts.length) {
+        data.AdditionalFacts.forEach(fact => {
+          addList.innerHTML += `<li>${fact}</li>`;
+        });
+      }
+
+      scroll.appendChild(tpl);
+      scroll.style.display = "block";
+    }
+
+    // Hide card area on load
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("word-card-scroll").style.display = "none";
+    });
+
+    // Hide card area when searching with empty input
+    document.getElementById("btn-search").addEventListener("click", e => {
+      const word = document.getElementById("word-input").value.trim();
+      if (!word) {
+        document.getElementById("word-card-scroll").style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
