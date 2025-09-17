@@ -30,6 +30,7 @@ print(os.path.join(data_folder,"sample_vocab.jsonl"))
 with open(os.path.join(data_folder,"sample_vocab.json"), "r", encoding="utf-8") as f:
     WORD_DB = json.load(f)
 
+# Get request to serve the UI
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui(request: Request):
     resp = templates.TemplateResponse("index.html", {"request": request})
@@ -48,7 +49,11 @@ def get_word(word: str = Query(...)) -> Dict[str, Any]:
 def health() -> Dict[str, str]:
     return {"status": "ok", "service": "vocabulary-card"}
 
-
+# Post requests for adding/updating/deleting words can be added here
+@app.post("/api/word")
+def add_or_update_word(word: str, definition: str) -> JSONResponse:
+    WORD_DB[word.lower()] = {"definition": definition}
+    return JSONResponse(content={"message": "Word added/updated successfully"}, status_code=200)
 
 
 # command for executing the fast api

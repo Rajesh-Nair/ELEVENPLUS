@@ -323,3 +323,77 @@ input:checked + .slider:before{transform:translateX(20px)}
   margin-bottom: 12px;
   padding-bottom: 8px;
 }
+
+/* Maintenance tab styles */
+.maintenance-tabs {
+  margin-top: 24px;
+}
+.maintenance-tab-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.maintenance-subtab-btn {
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg,#101724,#0b111b);
+  color: var(--text);
+  padding: 8px 18px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background .15s, border-color .15s;
+}
+.maintenance-subtab-btn.active {
+  background: linear-gradient(135deg, var(--accent) 0%, #4ea2ff 100%);
+  color: #0b1020;
+  border-color: var(--accent);
+}
+.maintenance-tab-panels {
+  width: 100%;
+}
+.maintenance-subtab-panel {
+  display: none;
+}
+.maintenance-subtab-panel.active {
+  display: block;
+}
+.editable-card input[type="text"],
+.editable-card textarea {
+  width: 100%;
+  background: linear-gradient(180deg,#0d1420,#0a1018);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 15px;
+  resize: vertical;
+}
+.editable-card textarea {
+  min-height: 38px;
+  font-family: inherit;
+}
+.editable-card label {
+  font-size: 13px;
+  color: #b5c7f7;
+  margin-bottom: 4px;
+  display: block;
+  font-weight: 500;
+}
+.edit-ways-list label,
+.edit-syn-ant-list label {
+  margin-bottom: 8px;
+}
+.edit-ways-list input[type="text"] {
+  margin-top: 2px;
+}
+.edit-syn-ant-list input[type="text"] {
+  margin-top: 2px;
+}
+.editable-card .actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+}
