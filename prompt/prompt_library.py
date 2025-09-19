@@ -45,10 +45,16 @@ Synonyms: leaf, sheet, folio, paper
 Antonyms: cover, binding, spine
 
 Additional facts
-Page¹ (sheet of paper) and Page² (royal attendant) are homographs (same spelling, different meaning).
+Page (sheet of paper) and Page (royal attendant) are homographs (same spelling, different meaning).
 The verb 'to page' (as in 'to call someone over an intercom') also comes from this root, showing how words evolve with technology.
 
 #########################
 
 Input Word : {input_word}
 """)
+
+
+# Central dictionary to register prompts
+PROMPT_REGISTRY = {
+    "retrieve_vocabinfo_prompt": retrieve_vocabinfo_prompt,
+}

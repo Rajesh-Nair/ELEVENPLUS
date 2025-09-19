@@ -51,8 +51,15 @@ def health() -> Dict[str, str]:
 
 # Post requests for adding/updating/deleting words can be added here
 @app.post("/api/word")
-def add_or_update_word(word: str, definition: str) -> JSONResponse:
-    WORD_DB[word.lower()] = {"definition": definition}
+async def add_or_update_word(word_list: str) -> JSONResponse:
+    # Extract list of words from word_list
+    # For each word, call the function
+    # Function to first check whether the word exists in the database
+    # if it exist, retrieve the details
+    # if it does not exist, call thhe LLM powered function to get the details
+    # Display the result for each word and allow user to edit the details
+    # Save the details to the database
+
     return JSONResponse(content={"message": "Word added/updated successfully"}, status_code=200)
 
 
