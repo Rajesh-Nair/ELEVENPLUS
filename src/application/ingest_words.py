@@ -7,8 +7,10 @@ from dotenv import load_dotenv
 from langchain_core.output_parsers import JsonOutputParser
 
 from logger import GLOBAL_LOGGER as log
+from exception.custom_exception import CustomException
 from prompt.prompt_library import PROMPT_REGISTRY
 from model.model import WordInfo, PromptType
+from utils.model_loader import ModelLoader
 
 # Access vocab database
 class vocab_manager:
@@ -44,12 +46,13 @@ class vocab_enhancer:
             return self.chain.invoke(input)
         except Exception as e:
             log.error(f"Error enhancing word info for {word}", error=str(e))
-            raise 
+            raise CustomException(f"Error enhancing word info for {word}", sys)
     
 if __name__ == "__main__":
     words = ["abandon", "benevolent", "candid"]
-    vocab_mgr = vocab_manager()
+    vocab_mgr = vocab_enhancer()
     for word in words:
         print(f"Details for word: {word}")
-        print(json.dumps(vocab_mgr.vocab_db_read(word), indent=2))
+        print(json.dumps(vocab_mgr.enhance_word_info(word), indent=2))
         print("\n")
+    print("Ingestion complete.")

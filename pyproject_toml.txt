@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "document_portal"
+version = "0.1"
+description = "An intelligent document analysis and comparison system powered by LLMs"
+readme = "README.md"
+authors = [
+    { name = "Rajesh Nair" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.13"
+
+[project.urls]
+Homepage = "https://your-homepage-url-if-any"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "examples*"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pylint",
+    "ipykernel"
+]
