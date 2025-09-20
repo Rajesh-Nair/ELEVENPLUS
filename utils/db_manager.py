@@ -1,6 +1,7 @@
 import os
 import sys
 import sqlite3
+import json
 from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import CustomException
 
@@ -8,14 +9,28 @@ class SQLiteManager:
     def __init__(self, db_path="vocab.db"):
         self.db_path = db_path
         self.conn = sqlite3.connect(db_path)
+        self.conn.row_factory = sqlite3.Row  # Ensures fetch returns dict-like rows
 
     def query_fetch(self, query, params=None):
         try:
             cursor = self.conn.execute(query, params or ())
-            return cursor.fetchone()
+            row = cursor.fetchone()
+            if row:
+                return dict(row)  # Return as JSON-like dict
+            return None
         except Exception as e:
             log.error(f"Database error: {e}", query=query)
-            raise CustomException("Missing API keys", sys)
+            raise CustomException("Database fetch failed", sys)
+
+    def query_fetch_all(self, query, params=None):
+        """Fetch all rows as JSON-like list of dicts"""
+        try:
+            cursor = self.conn.execute(query, params or ())
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+        except Exception as e:
+            log.error(f"Database error: {e}", query=query)
+            raise CustomException("Database fetch all failed", sys)
 
     def query_execute(self, query, params=None):
         try:
@@ -23,7 +38,21 @@ class SQLiteManager:
             self.conn.commit()
         except Exception as e:
             log.error(f"Database error: {e}", query=query)
-            raise CustomException("Missing API keys", sys)
+            raise CustomException("Database execute failed", sys)
+
+    def insert_json(self, table, data: dict):
+        """Insert a JSON-like dict into a table"""
+        keys = ', '.join(data.keys())
+        placeholders = ', '.join(['?'] * len(data))
+        query = f"INSERT INTO {table} ({keys}) VALUES ({placeholders});"
+        self.query_execute(query, tuple(data.values()))
+
+    def update_json(self, table, data: dict, where: dict):
+        """Update a table using JSON-like dicts for SET and WHERE"""
+        set_clause = ', '.join([f"{k} = ?" for k in data.keys()])
+        where_clause = ' AND '.join([f"{k} = ?" for k in where.keys()])
+        query = f"UPDATE {table} SET {set_clause} WHERE {where_clause};"
+        self.query_execute(query, tuple(data.values()) + tuple(where.values()))
 
     def delete_db(self):
         """Close the connection and delete the database file from disk."""
@@ -38,14 +67,22 @@ class SQLiteManager:
             log.error(f"Failed to delete database: {e}", db_path=self.db_path)
             raise CustomException("Failed to delete database", sys)
         
+    def table_exists(self, table_name):
+        """Check if a table exists in the database."""
+        try:
+            query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?;"
+            return self.query_fetch(query, params=(table_name,)) is not None
+        except Exception as e:
+            log.error(f"Error checking table existence: {e}", table_name=table_name)
+            raise CustomException("Failed to check table existence", sys)
+    
     def close(self):
         self.conn.close()
 
+
 if __name__ == "__main__":
-    # Initialize and test the SQLiteManager
     db = SQLiteManager(db_path="data/test_vocab.db")
 
-    # Create table
     create_table_query = """
     CREATE TABLE IF NOT EXISTS vocab (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,40 +95,37 @@ if __name__ == "__main__":
     db.query_execute(create_table_query)
     print("Table created.")
 
-    # Insert sample data (safe, parameterized)
-    insert_query = """
-    INSERT INTO vocab (word, definition, synonyms, example) 
-    VALUES (?, ?, ?, ?);
-    """
-    db.query_execute(insert_query, ("example", "A representative form or pattern", "instance, sample, case", "This is an example sentence."))
+    if db.table_exists("vocab"):
+        print("Table 'vocab' exists.")
+    else:
+        print("Table 'vocab' does not exist.")
+
+    # Insert sample data as JSON
+    sample_data = {
+        "word": "example",
+        "definition": "A representative form or pattern",
+        "synonyms": "instance, sample, case",
+        "example": "This is an example sentence."
+    }
+    db.insert_json("vocab", sample_data)
     print("Sample data inserted.")
 
-    # Update sample data (safe, parameterized)
-    update_fields = ["definition = ?"]
-    update_query = f"UPDATE vocab SET {', '.join(update_fields)} WHERE word = ?;"
-    db.query_execute(update_query, ("A thing characteristic of its kind or illustrating a general rule", "example"))
+    # Update sample data as JSON
+    update_data = {
+        "definition": "A thing characteristic of its kind or illustrating a general rule"
+    }
+    db.update_json("vocab", update_data, where={"word": "example"})
     print("Sample data updated.")
 
-    # Fetch and print data (safe, parameterized)
-    select_query = "SELECT * FROM vocab WHERE word = ?;"
-    result = db.query_fetch(select_query, ("example",))
-    print("Fetched data:", result)
+    # Fetch and print data as JSON
+    result = db.query_fetch("SELECT * FROM vocab WHERE word = ?;", ("example",))
+    print("Fetched data:", json.dumps(result, indent=2))
 
-    # Delete sample data (safe, parameterized)
-    delete_query = "DELETE FROM vocab WHERE word = ?;"
-    db.query_execute(delete_query, ("example",))
+    # Delete sample data
+    db.query_execute("DELETE FROM vocab WHERE word = ?;", ("example",))
     print("Sample data deleted.")
 
-    # Delete table
-    drop_table_query = "DROP TABLE IF EXISTS vocab;"
-    db.query_execute(drop_table_query)
+    db.query_execute("DROP TABLE IF EXISTS vocab;")
     print("Table dropped.")
 
-    # Delete the database file
-    #db.delete_db()
-    #print("Database file deleted.")
-
-    # Close the database connection
     db.close()
-
-    
