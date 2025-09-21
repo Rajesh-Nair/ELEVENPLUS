@@ -11,6 +11,17 @@ class SQLiteManager:
         self.conn = sqlite3.connect(db_path)
         self.conn.row_factory = sqlite3.Row  # Ensures fetch returns dict-like rows
 
+    def get_column_names(self, table_name):
+        """Return a list of column names for the given table."""
+        try:
+            query = f"PRAGMA table_info({table_name});"
+            cursor = self.conn.execute(query)
+            columns = [row[1] for row in cursor.fetchall()]  # row[1] = column name
+            return columns
+        except Exception as e:
+            log.error(f"Error fetching column names: {e}", table_name=table_name)
+            raise CustomException("Failed to fetch column names", sys)
+
     def query_fetch(self, query, params=None):
         try:
             cursor = self.conn.execute(query, params or ())
@@ -97,8 +108,10 @@ if __name__ == "__main__":
 
     if db.table_exists("vocab"):
         print("Table 'vocab' exists.")
+        print("Columns:", db.get_column_names("vocab"))
     else:
         print("Table 'vocab' does not exist.")
+
 
     # Insert sample data as JSON
     sample_data = {

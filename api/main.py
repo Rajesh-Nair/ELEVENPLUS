@@ -50,7 +50,7 @@ def health() -> Dict[str, str]:
     return {"status": "ok", "service": "vocabulary-card"}
 
 # Post requests for adding/updating/deleting words can be added here
-@app.post("/api/word")
+@app.post("/api/addword")
 async def add_or_update_word(word_list: str) -> JSONResponse:
     # Extract list of words from word_list
     # For each word, call the function

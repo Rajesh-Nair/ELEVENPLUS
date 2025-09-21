@@ -1,14 +1,16 @@
 from utils.db_manager import SQLiteManager
 import os
-
+import pandas as pd
 from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import CustomException
 
 class VocabDBManager:
     def __init__(self, db_path=os.path.join("data","vocab.db")):
+        self.db_path = db_path
         self.db = SQLiteManager(db_path=db_path)
         if not self.db.table_exists("vocab"):
             self.create_table()    
+        self.vocab_columns = self.db.get_column_names("vocab")
 
     def create_table(self):
         try :
@@ -33,43 +35,68 @@ class VocabDBManager:
             log.error("Error creating vocab table", error=str(e))
             raise CustomException("Error creating vocab table : ", e) from e
 
-    def insert_word(self, json_data):
+    def insert_word(self, dict_data):
         try :
-            self.db.insert_json("vocab", json_data)
+            input_data = { col : dict_data[col] for col in self.vocab_columns if col not in ['created_at'] }
+            input_data['word'] = input_data['word'].lower()
+            self.db.insert_json("vocab", input_data)
         except Exception as e:
-            log.error(f"Error inserting word {json_data["word"]}", error=str(e))
-            raise CustomException(f"Error inserting word {json_data["word"]} : ", e) from e
+            log.error(f"Error inserting word {dict_data["word"]}", error=str(e))
+            raise CustomException(f"Error inserting word {dict_data["word"]} : ", e) from e
 
     def get_word(self, word):
         select_query = "SELECT * FROM vocab WHERE word = ?;"
         return self.db.query_fetch(select_query, (word,))
+    
+    def get_all_words(self):
+        select_query = "SELECT word FROM vocab;"
+        return [word_dict['word'] for word_dict in self.db.query_fetch_all(select_query)]
+
+    def export_to_csv(self, export_path):
+        try:
+            select_query = "SELECT * FROM vocab;"
+            word_dict = self.db.query_fetch_all(select_query)
+            if not word_dict:
+                log.warning("No data found in vocab table to export")
+            df = pd.DataFrame(word_dict)
+            df.to_csv(export_path, index=False)
+            log.info(f"Vocab table exported to {export_path}")
+        except Exception as e:
+            log.error("Error exporting vocab table to CSV", error=str(e))
+            raise CustomException("Error exporting vocab table to CSV", e) from e
 
     def close(self):
         self.db.close()
 
 if __name__ == "__main__":
-    vocab_db_mgr = VocabDBManager(db_path=os.path.join("data","vocab.db"))
+    vocab_db_mgr = VocabDBManager(db_path=os.path.join("data","vocab_11plus.db"))
 
     # Insert sample word
-    vocab_db_mgr.insert_word(
-        {
-        "word":"abandon",
-        "meaning":"to leave behind or give up",
-        "usage":"He had to abandon his car in the snow.",
-        "etymology":"from Old French abandoner, from a bandon 'control, power'",
-        "word_break":"a-ban-don",
-        "picture":"http://example.com/abandon.jpg",
-        "did_you_know_facts":"The word 'abandon' can also mean to act without restraint.",
-        "synonyms":"forsake, desert, leave",
-        "antonyms":"keep, maintain, continue",
-        "additional_facts":"1) Homograph: 'abandon' can be a noun meaning complete lack of inhibition. 2) Often used in legal contexts.",
-        #"created_at": "2025-09-20T23:25:10.934833Z"
-        }
-    )
+    if not vocab_db_mgr.get_word("benevolent"):
+        vocab_db_mgr.insert_word(
+            {
+            'word': 'benevolent', 
+            'meaning': 'Well meaning and kindly; characterized by or expressing goodwill or kindly feelings.', 
+            'usage': 'The benevolent king donated a large sum of money to the orphanage.', 
+            'etymology': "From Latin 'bene' (well) + 'volens' (wishing).", 
+            'word_break': "Break it down as 'bene-' (good) + 'volent' (wishing) = wishing good things.", 
+            'picture': 'Imagine a smiling person giving food to the homeless.', 
+            'did_you_know_facts': 'Benevolence is often associated with philanthropy and charitable giving.', 
+            'synonyms': 'kind, compassionate, generous, altruistic', 
+            'antonyms': 'malevolent, cruel, unkind, selfish', 
+            'additional_facts': "Benevolent is often used to describe someone in a position of power who uses that power for good. A related word is 'beneficial,' which means producing good results or effects."
+            }
+
+        )
+    else :
+        print("Word 'abandon' already exists in the database.")
 
     # Retrieve and print the word details
-    word_details = vocab_db_mgr.get_word("abandon")
+    word_details = vocab_db_mgr.get_word("benevolent")
     print(word_details)
+
+    # fetch all words
+    print("All words : {}".format(", ".join(vocab_db_mgr.get_all_words())))
 
     # Close the database connection
     vocab_db_mgr.close()
