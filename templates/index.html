@@ -108,42 +108,49 @@
       const data = await resp.json();
       const scroll = document.getElementById("word-card-scroll");
       scroll.innerHTML = "";
-      if (!data.Word) {
+      if (!data.word) {
         scroll.style.display = "block";
         scroll.innerHTML = `<div class="vocab-card"><div class="word-title">Word not found.</div></div>`;
         return;
       }
       const tpl = document.getElementById("vocab-card-template").content.cloneNode(true);
-      tpl.querySelector(".word-value").textContent = data.Word || "";
-      tpl.querySelector(".meaning-value").textContent = data.Meaning || "";
-      tpl.querySelector(".usage-value").textContent = data.UsageInSentence || "";
+      tpl.querySelector(".word-value").textContent = data.word || "";
+      tpl.querySelector(".meaning-value").textContent = data.meaning || "";
+      tpl.querySelector(".usage-value").textContent = data.usage || "";
 
       // Ways to remember
       const waysList = tpl.querySelector(".ways-list");
-      if (data.WaysToRemember) {
-        if (data.WaysToRemember.Etymology)
-          waysList.innerHTML += `<li><strong>Etymology:</strong> ${data.WaysToRemember.Etymology}</li>`;
-        if (data.WaysToRemember.WordBreak)
-          waysList.innerHTML += `<li><strong>Word Break:</strong> ${data.WaysToRemember.WordBreak}</li>`;
-        if (data.WaysToRemember.Picture)
-          waysList.innerHTML += `<li><strong>Picture:</strong> ${data.WaysToRemember.Picture}</li>`;
-        if (data.WaysToRemember.DidYouKnowFacts)
-          waysList.innerHTML += `<li><strong>Did You Know Facts?:</strong> ${data.WaysToRemember.DidYouKnowFacts}</li>`;
-      }
+      
+      if (data.etymology)
+        waysList.innerHTML += `<li><strong>Etymology:</strong> ${data.etymology}</li>`;
+      if (data.word_break)
+        waysList.innerHTML += `<li><strong>Word Break:</strong> ${data.word_break}</li>`;
+      if (data.picture)
+        waysList.innerHTML += `<li><strong>Picture:</strong> ${data.picture}</li>`;
+      if (data.did_you_know_facts)
+        waysList.innerHTML += `<li><strong>Did You Know Facts?:</strong> ${data.did_you_know_facts}</li>`;
+      
 
       // Synonyms & Antonyms
       const synAntList = tpl.querySelector(".syn-ant-list");
-      if (data.Synonyms && data.Synonyms.length)
-        synAntList.innerHTML += `<li><strong>Synonyms:</strong> ${data.Synonyms.join(", ")}</li>`;
-      if (data.Antonyms && data.Antonyms.length)
-        synAntList.innerHTML += `<li><strong>Antonyms:</strong> ${data.Antonyms.join(", ")}</li>`;
+      if (data.synonyms)
+        synAntList.innerHTML += `<li><strong>Synonyms:</strong> ${data.synonyms}</li>`;
+      if (data.antonyms)
+        synAntList.innerHTML += `<li><strong>Antonyms:</strong> ${data.antonyms}</li>`;
 
       // Additional facts
       const addList = tpl.querySelector(".additional-list");
-      if (data.AdditionalFacts && data.AdditionalFacts.length) {
-        data.AdditionalFacts.forEach(fact => {
-          addList.innerHTML += `<li>${fact}</li>`;
-        });
+      if (data.additional_facts) {
+      // Ensure it's treated as a string, then split by '.' or '\n'
+      const facts = data.additional_facts
+        .toString()
+        .split(/[\.\n]+/)       // split by '.' or newline
+        .map(f => f.trim())     // remove extra spaces
+        .filter(f => f.length); // remove empty entries
+
+      facts.forEach(fact => {
+        addList.innerHTML += `<li>${fact}</li>`;
+      });
       }
 
       scroll.appendChild(tpl);

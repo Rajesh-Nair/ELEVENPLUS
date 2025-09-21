@@ -46,6 +46,11 @@ class IngestWords:
             ingest_counter[status[word]].append(word)
         return dict(ingest_counter)
 
+    def retrieve_all_words(self):
+        return self.db_mgr.get_all_words()
+    
+    def retrieve_word(self, word):
+        return self.db_mgr.get_word(word.lower())
 
     def close(self):
         self.db_mgr.close()

@@ -15,19 +15,20 @@ class VocabDBManager:
     def create_table(self):
         try :
             create_table_query = """
-            CREATE TABLE IF NOT EXISTS vocab (            
-                word TEXT UNIQUE NOT NULL PRIMARY KEY,
-                meaning TEXT,
-                usage TEXT,
-                etymology TEXT,
-                word_break TEXT,
-                picture TEXT,
-                did_you_know_facts TEXT,
-                synonyms TEXT,
-                antonyms TEXT,
-                additional_facts TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
+            CREATE TABLE IF NOT EXISTS vocab (
+            word TEXT UNIQUE NOT NULL PRIMARY KEY COLLATE NOCASE,
+            meaning TEXT,
+            usage TEXT,
+            etymology TEXT,
+            word_break TEXT,
+            picture TEXT,
+            did_you_know_facts TEXT,
+            synonyms TEXT,
+            antonyms TEXT,
+            additional_facts TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            points INTEGER DEFAULT 10
+        );
             """
             self.db.query_execute(create_table_query)
             log.info("Vocab table created")
@@ -37,7 +38,7 @@ class VocabDBManager:
 
     def insert_word(self, dict_data):
         try :
-            input_data = { col : dict_data[col] for col in self.vocab_columns if col not in ['created_at'] }
+            input_data = { col : dict_data[col] for col in self.vocab_columns if col not in ['created_at', 'points'] }
             input_data['word'] = input_data['word'].lower()
             self.db.insert_json("vocab", input_data)
         except Exception as e:
