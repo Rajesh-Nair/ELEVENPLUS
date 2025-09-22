@@ -9,3 +9,4 @@ langchain-google-genai
 structlog
 pydantic
 pandas
+reportlab
