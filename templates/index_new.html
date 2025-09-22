@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Vocab - ElevenPlus</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Google Fonts for classy look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="/static/style_new.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Left Navigation -->
+    <nav class="left-nav">
+      <div class="nav-header">
+        <div class="brand">
+          <span class="logo">📝</span>
+          <h1>Vocab ElevenPlus</h1>
+        </div>
+      </div>
+      
+      <div class="nav-content">
+        <!-- Word Search Form -->
+        <div class="nav-form">
+          <div class="nav-field">
+            <label for="word-input">Enter a word</label>
+            <input id="word-input" type="text" placeholder="Type a word (e.g. Page¹)" autocomplete="off" />
+          </div>
+          <button id="btn-search" class="nav-btn primary">Show Card</button>
+        </div>
+
+        <!-- Show All Words Section -->
+        <div class="word-list-section">
+          <h3>All Words</h3>
+          <button id="btn-show-all" class="nav-btn secondary">Show All Words</button>
+          
+          <div id="word-list-container" class="word-list-container hidden">
+            <ul id="word-list-ul" class="word-list-ul"></ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <div class="content-header">
+        <h2 id="page-title">Word Card</h2>
+        <div class="tab-switcher">
+          <button class="tab-switch-btn active" data-tab="search">View Word Card</button>
+          <button class="tab-switch-btn" data-tab="add">Add Word Card</button>
+          <button class="tab-switch-btn disabled" disabled>More Coming</button>
+        </div>
+      </div>
+      
+      <div class="content-body">
+        <!-- Word Card Search Page -->
+        <div id="page-search" class="page-content">
+          <div class="content-card">
+            <div id="word-card-scroll" class="word-card-scroll hidden">
+              <!-- Word cards will be dynamically inserted here -->
+            </div>
+            
+            <!-- Empty state -->
+            <div id="empty-state" class="empty-state">
+              <div>📚</div>
+              <h3>No word selected</h3>
+              <p>Enter a word in the left panel to see its details</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Word Card Page -->
+        <div id="page-add" class="page-content hidden">
+          <div class="content-card">
+            <div class="add-word-section">
+              <h3>Add New Words</h3>
+              <p class="section-description">Enter a list of words separated by spaces or new lines. Each word will be processed and added to the vocabulary database.</p>
+              
+              <div class="add-word-form">
+                <div class="form-field">
+                  <label for="word-list-input">Word List</label>
+                  <textarea 
+                    id="word-list-input" 
+                    placeholder="Enter words here...&#10;Example:&#10;apple banana cherry&#10;dog cat elephant&#10;happy sad excited"
+                    rows="8"
+                  ></textarea>
+                </div>
+                
+                <div class="form-actions">
+                  <button id="btn-add-words" class="add-btn primary">Add Words</button>
+                  <button id="btn-clear-input" class="add-btn secondary">Clear</button>
+                </div>
+              </div>
+              
+              <div id="add-results" class="add-results hidden">
+                <h4>Results</h4>
+                <div id="results-content" class="results-content"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Template for dynamic card rendering -->
+  <template id="vocab-card-template">
+    <div class="vocab-card">
+      <div class="word-title"><strong>Word:</strong> <span class="word-value"></span></div>
+      <div class="vocab-section">
+        <span class="vocab-label">Meaning:</span>
+        <span class="meaning-value"></span>
+      </div>
+      <div class="vocab-section">
+        <span class="vocab-label">Usage in a Simple Sentence:</span>
+        <span class="usage-value"></span>
+      </div>
+      <div class="vocab-section">
+        <span class="vocab-label">Ways to Remember the Meaning</span>
+        <ul class="ways-list"></ul>
+      </div>
+      <div class="vocab-section">
+        <span class="vocab-label">Synonyms & Antonyms</span>
+        <ul class="syn-ant-list"></ul>
+      </div>
+      <div class="vocab-section">
+        <span class="vocab-label">Additional facts</span>
+        <ul class="additional-list"></ul>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    // DOM Elements
+    const wordInput = document.getElementById('word-input');
+    const searchBtn = document.getElementById('btn-search');
+    const showAllBtn = document.getElementById('btn-show-all');
+    const wordListContainer = document.getElementById('word-list-container');
+    const wordListUl = document.getElementById('word-list-ul');
+    const wordCardScroll = document.getElementById('word-card-scroll');
+    const emptyState = document.getElementById('empty-state');
+    
+    // Tab switching elements
+    const tabButtons = document.querySelectorAll('.tab-switch-btn');
+    const pageSearch = document.getElementById('page-search');
+    const pageAdd = document.getElementById('page-add');
+    const pageTitle = document.getElementById('page-title');
+    
+    // Add word elements
+    const wordListInput = document.getElementById('word-list-input');
+    const addWordsBtn = document.getElementById('btn-add-words');
+    const clearBtn = document.getElementById('btn-clear-input');
+    const addResults = document.getElementById('add-results');
+    const resultsContent = document.getElementById('results-content');
+
+    // State
+    let isWordListVisible = false;
+
+    // Event Listeners
+    searchBtn.addEventListener('click', handleSearch);
+    showAllBtn.addEventListener('click', handleShowAll);
+    wordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleSearch();
+      }
+    });
+
+    // Tab switching
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        
+        // Remove active class from all buttons
+        tabButtons.forEach(b => b.classList.remove('active'));
+        // Add active class to clicked button
+        btn.classList.add('active');
+        
+        // Hide all pages
+        pageSearch.classList.add('hidden');
+        pageAdd.classList.add('hidden');
+        
+        // Show selected page
+        const tab = btn.dataset.tab;
+        if (tab === 'search') {
+          pageSearch.classList.remove('hidden');
+          pageTitle.textContent = 'Word Card';
+        } else if (tab === 'add') {
+          pageAdd.classList.remove('hidden');
+          pageTitle.textContent = 'Add Word Card';
+        }
+      });
+    });
+
+    // Function to switch to search tab
+    function switchToSearchTab() {
+      // Find the search tab button
+      const searchTabBtn = document.querySelector('.tab-switch-btn[data-tab="search"]');
+      
+      // Remove active class from all buttons
+      tabButtons.forEach(b => b.classList.remove('active'));
+      // Add active class to search button
+      searchTabBtn.classList.add('active');
+      
+      // Hide all pages
+      pageSearch.classList.add('hidden');
+      pageAdd.classList.add('hidden');
+      
+      // Show search page
+      pageSearch.classList.remove('hidden');
+      pageTitle.textContent = 'Word Card';
+    }
+
+    // Add word functionality
+    addWordsBtn.addEventListener('click', handleAddWords);
+    clearBtn.addEventListener('click', handleClearInput);
+
+    // Handle word list clicks
+    wordListUl.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('word-link')) {
+        e.preventDefault();
+        const word = e.target.textContent.trim();
+        wordInput.value = word;
+        await showWordCard(word);
+      }
+    });
+
+    // Search function
+    async function handleSearch() {
+      const word = wordInput.value.trim();
+      
+      // Switch to search tab if not already there
+      const activeTab = document.querySelector('.tab-switch-btn.active');
+      if (activeTab && activeTab.dataset.tab !== 'search') {
+        switchToSearchTab();
+      }
+      
+      if (word) {
+        await showWordCard(word);
+      } else {
+        showEmptyState();
+      }
+    }
+
+    // Show all words function
+    async function handleShowAll() {
+      if (isWordListVisible) {
+        hideWordList();
+      } else {
+        await fetchAndShowAllWords();
+      }
+    }
+
+    // Fetch and display all words
+    async function fetchAndShowAllWords() {
+      try {
+        showAllBtn.textContent = 'Loading...';
+        showAllBtn.classList.add('loading');
+        
+        const response = await fetch('/api/words');
+        const words = await response.json();
+        
+        wordListUl.innerHTML = words.map(word => 
+          `<li><a href="#" class="word-link">${word}</a></li>`
+        ).join('');
+        
+        showWordList();
+        showAllBtn.textContent = 'Hide All Words';
+        isWordListVisible = true;
+      } catch (error) {
+        console.error('Error fetching words:', error);
+        wordListUl.innerHTML = '<li style="color: var(--muted);">Error loading words</li>';
+        showWordList();
+      } finally {
+        showAllBtn.classList.remove('loading');
+      }
+    }
+
+    // Show word list
+    function showWordList() {
+      wordListContainer.classList.remove('hidden');
+    }
+
+    // Hide word list
+    function hideWordList() {
+      wordListContainer.classList.add('hidden');
+      showAllBtn.textContent = 'Show All Words';
+      isWordListVisible = false;
+    }
+
+    // Show word card
+    async function showWordCard(word) {
+      try {
+        wordCardScroll.classList.add('loading');
+        emptyState.classList.add('hidden');
+        wordCardScroll.classList.remove('hidden');
+        
+        const response = await fetch(`/api/word?word=${encodeURIComponent(word.toLowerCase())}`);
+        const data = await response.json();
+        
+        wordCardScroll.innerHTML = '';
+        
+        if (!data.word) {
+          wordCardScroll.innerHTML = `
+            <div class="vocab-card">
+              <div class="word-title">Word not found</div>
+              <div class="vocab-section">
+                <span class="vocab-label">Error:</span>
+                <span class="meaning-value">The word "${word}" was not found in the database.</span>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Create word card from template
+        const template = document.getElementById('vocab-card-template').content.cloneNode(true);
+        
+        // Fill in basic information
+        template.querySelector('.word-value').textContent = data.word || '';
+        template.querySelector('.meaning-value').textContent = data.meaning || '';
+        template.querySelector('.usage-value').textContent = data.usage || '';
+
+        // Ways to remember
+        const waysList = template.querySelector('.ways-list');
+        if (data.etymology) {
+          waysList.innerHTML += `<li><strong>Etymology:</strong> ${data.etymology}</li>`;
+        }
+        if (data.word_break) {
+          waysList.innerHTML += `<li><strong>Word Break:</strong> ${data.word_break}</li>`;
+        }
+        if (data.picture) {
+          waysList.innerHTML += `<li><strong>Picture:</strong> ${data.picture}</li>`;
+        }
+        if (data.did_you_know_facts) {
+          waysList.innerHTML += `<li><strong>Did You Know Facts:</strong> ${data.did_you_know_facts}</li>`;
+        }
+
+        // Synonyms & Antonyms
+        const synAntList = template.querySelector('.syn-ant-list');
+        if (data.synonyms) {
+          synAntList.innerHTML += `<li><strong>Synonyms:</strong> ${data.synonyms}</li>`;
+        }
+        if (data.antonyms) {
+          synAntList.innerHTML += `<li><strong>Antonyms:</strong> ${data.antonyms}</li>`;
+        }
+
+        // Additional facts
+        const addList = template.querySelector('.additional-list');
+        if (data.additional_facts) {
+          addList.innerHTML = `<li>${data.additional_facts}</li>`;
+        }
+
+        wordCardScroll.appendChild(template);
+        
+      } catch (error) {
+        console.error('Error fetching word:', error);
+        wordCardScroll.innerHTML = `
+          <div class="vocab-card">
+            <div class="word-title">Error</div>
+            <div class="vocab-section">
+              <span class="vocab-label">Error:</span>
+              <span class="meaning-value">Failed to load word information. Please try again.</span>
+            </div>
+          </div>
+        `;
+      } finally {
+        wordCardScroll.classList.remove('loading');
+      }
+    }
+
+    // Show empty state
+    function showEmptyState() {
+      wordCardScroll.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+    }
+
+    // Add words function
+    async function handleAddWords() {
+      const wordList = wordListInput.value.trim();
+      if (!wordList) {
+        alert('Please enter some words to add.');
+        return;
+      }
+
+      try {
+        addWordsBtn.textContent = 'Adding Words...';
+        addWordsBtn.classList.add('loading');
+        addResults.classList.add('hidden');
+
+        const response = await fetch('/api/addword', {
+          method: 'POST',
+          body: wordList
+        });
+
+        const result = await response.json();
+        displayAddResults(result);
+        
+      } catch (error) {
+        console.error('Error adding words:', error);
+        displayAddResults({
+          error: 'Failed to add words. Please try again.',
+          'total-words': 0,
+          'failed-count': 0,
+          'skipped-count': 0
+        });
+      } finally {
+        addWordsBtn.textContent = 'Add Words';
+        addWordsBtn.classList.remove('loading');
+      }
+    }
+
+    // Clear input function
+    function handleClearInput() {
+      wordListInput.value = '';
+      addResults.classList.add('hidden');
+    }
+
+    // Display add results
+    function displayAddResults(result) {
+      addResults.classList.remove('hidden');
+      
+      let html = '';
+      
+      if (result.error) {
+        html = `
+          <div class="result-error">
+            <h5>❌ Error</h5>
+            <p>${result.error}</p>
+          </div>
+        `;
+      } else {
+        html = `
+          <div class="result-summary">
+            <h5>✅ Processing Complete</h5>
+            <div class="result-stats">
+              <div class="stat-item">
+                <span class="stat-label">Total Words:</span>
+                <span class="stat-value">${result['total-words'] || 0}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Successfully Added:</span>
+                <span class="stat-value success">${(result['total-words'] || 0) - (result['failed-count'] || 0) - (result['skipped-count'] || 0)}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Failed:</span>
+                <span class="stat-value error">${result['failed-count'] || 0}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Already Existed:</span>
+                <span class="stat-value warning">${result['skipped-count'] || 0}</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        if (result['failed-words'] && result['failed-words'].length > 0) {
+          html += `
+            <div class="result-details">
+              <h6>Failed Words:</h6>
+              <p class="failed-words">${result['failed-words'].join(', ')}</p>
+            </div>
+          `;
+        }
+
+        if (result['skipped-words'] && result['skipped-words'].length > 0) {
+          html += `
+            <div class="result-details">
+              <h6>Already Existed:</h6>
+              <p class="skipped-words">${result['skipped-words'].join(', ')}</p>
+            </div>
+          `;
+        }
+      }
+
+      resultsContent.innerHTML = html;
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      showEmptyState();
+    });
+  </script>
+</body>
+</html>

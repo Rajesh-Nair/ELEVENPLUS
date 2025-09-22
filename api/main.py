@@ -11,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.application.ingest_words import IngestWords
 
+from logger import GLOBAL_LOGGER as log
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 app = FastAPI(title="Vocabulary Card", version="0.1")
@@ -28,6 +30,13 @@ app.add_middleware(
 # Get request to serve the UI
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui(request: Request):
+    resp = templates.TemplateResponse("index_new.html", {"request": request})
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+# Get request to serve the original UI
+@app.get("/original", response_class=HTMLResponse)
+async def serve_original_ui(request: Request):
     resp = templates.TemplateResponse("index.html", {"request": request})
     resp.headers["Cache-Control"] = "no-store"
     return resp
@@ -53,7 +62,12 @@ def health() -> Dict[str, str]:
 
 # Post requests for adding/updating/deleting words can be added here
 @app.post("/api/addword")
-async def add_word(word_list: str) -> JSONResponse:
+async def add_word(request: Request) -> dict:
+    # Get the raw body as text
+    body = await request.body()
+    word_list = body.decode('utf-8')
+    
+    log.info(f"Adding words: {word_list}")
     ingestor = IngestWords()
     ingest_status = ingestor.ingest_wordlist(word_list.split())
     ingestor.close()
@@ -67,6 +81,6 @@ async def add_word(word_list: str) -> JSONResponse:
 
 # command for executing the fast api
 # uvicorn api.main:app --port 8080 --reload    
-#uvicorn api.main:app --host 0.0.0.0 --port 8080 --reload
+# uvicorn api.main:app --host 0.0.0.0 --port 8080 --reload
 
 
