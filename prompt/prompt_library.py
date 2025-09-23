@@ -40,8 +40,44 @@ additional_facts : Page (sheet of paper) and Page (royal attendant) are homograp
 input_word : {input_word}
 """)
 
+# Prompt for create Test 1 
+TestVocab_type1_prompt = ChatPromptTemplate.from_template(
+"""
+Create a test for 11 year old students
+1) For each word listed, write a sentence that uses the word however question should have the word missing.
+2) The word, but no other, should be the right fit for the sentence
+3) The level of difficulty is Very Hard
+4) Follow the format of your response as in the example below and no additional information is appended
+5) You must always return valid JSON fenced by a markdown code block 
+
+Example #############
+
+Words : 
+parallel millionaire chasm chemistry plimsolls
+
+Questions :
+1) The two railway tracks run ________ to each other for many miles.
+2) After inventing a popular new app, she became a young ________ within a year.
+3) The hikers could not cross the deep ________ that split the mountain path in two.
+4) He decided to study ________ at university because he was fascinated by how substances interact.
+5) In the 1980s, British schoolchildren often wore ________ for physical education lessons.
+
+Answers :
+1) The two railway tracks run parallel to each other for many miles.
+2) After inventing a popular new app, she became a young millionaire within a year.
+3) The hikers could not cross the deep chasm that split the mountain path in two.
+4) He decided to study chemistry at university because he was fascinated by how substances interact.
+5) In the 1980s, British school children often wore plimsolls for physical education lessons.
+
+
+Words :
+{words}
+
+"""
+
 
 # Central dictionary to register prompts
 PROMPT_REGISTRY = {
     "retrieve_vocabinfo_prompt": retrieve_vocabinfo_prompt,
+    "TestVocab_type1_prompt": TestVocab_type1_prompt
 }

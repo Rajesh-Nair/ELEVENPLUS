@@ -76,6 +76,12 @@ async def add_word(request: Request) -> dict:
             "failed-words": ingest_status.get("failed", []),
             "skipped-count": len(ingest_status.get("exists", [])),
             "skipped-words": ingest_status.get("exists", [])}
+
+# request to generate vocab tests
+@app.post("/api/vocabtest")
+def post_test(request: Request) -> dict:
+    pass
+    return None
     
 
 

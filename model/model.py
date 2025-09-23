@@ -13,6 +13,11 @@ class WordInfo(BaseModel):
     Antonyms: str
     Additional_facts: str
 
+class Test1(BaseModel):
+    Questions: str
+    Answers: str
+
 class PromptType(str, Enum):
     RETRIEVE_VOCABINFO = "retrieve_vocabinfo_prompt"
+    TEST_VOCAB_TYPE1 = "TestVocab_type1_prompt"
 

@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import CustomException
+from collections import defaultdict
 
 class VocabDBManager:
     def __init__(self, db_path=os.path.join("data","vocab.db")):
@@ -65,6 +66,33 @@ class VocabDBManager:
         except Exception as e:
             log.error("Error exporting vocab table to CSV", error=str(e))
             raise CustomException("Error exporting vocab table to CSV", e) from e
+        
+
+    def get_all_words_for_test(self):
+        select_query = "SELECT word, points FROM vocab;"
+        vocab_words = self.db.query_fetch_all(select_query)
+        return vocab_words
+    
+    def updated_words_points_for_test(self, vocab_words):
+        if not vocab_words or len(vocab_words) == 0:
+            return None
+        update_query = """UPDATE vocab 
+                        SET points = CASE word
+                        """
+        for word_dict in vocab_words:
+            update_query += f"""
+                            WHEN '{word_dict['word']}' THEN {word_dict['points']}
+                        """
+        update_query += """
+                        END
+                        WHERE word IN ({});""".format(','.join(["'{}'".format(word_dict['word']) for word_dict in vocab_words]))
+        self.db.query_execute(update_query)
+        return True
+    
+    def reset_words_points_for_test(self):
+        update_query = """UPDATE vocab SET points = 10 WHERE TRUE;"""
+        self.db.query_execute(update_query)
+        return True
 
     def close(self):
         self.db.close()
@@ -73,24 +101,24 @@ if __name__ == "__main__":
     vocab_db_mgr = VocabDBManager(db_path=os.path.join("data","vocab_11plus.db"))
 
     # Insert sample word
-    if not vocab_db_mgr.get_word("benevolent"):
-        vocab_db_mgr.insert_word(
-            {
-            'word': 'benevolent', 
-            'meaning': 'Well meaning and kindly; characterized by or expressing goodwill or kindly feelings.', 
-            'usage': 'The benevolent king donated a large sum of money to the orphanage.', 
-            'etymology': "From Latin 'bene' (well) + 'volens' (wishing).", 
-            'word_break': "Break it down as 'bene-' (good) + 'volent' (wishing) = wishing good things.", 
-            'picture': 'Imagine a smiling person giving food to the homeless.', 
-            'did_you_know_facts': 'Benevolence is often associated with philanthropy and charitable giving.', 
-            'synonyms': 'kind, compassionate, generous, altruistic', 
-            'antonyms': 'malevolent, cruel, unkind, selfish', 
-            'additional_facts': "Benevolent is often used to describe someone in a position of power who uses that power for good. A related word is 'beneficial,' which means producing good results or effects."
-            }
+    # if not vocab_db_mgr.get_word("benevolent"):
+    #     vocab_db_mgr.insert_word(
+    #         {
+    #         'word': 'benevolent', 
+    #         'meaning': 'Well meaning and kindly; characterized by or expressing goodwill or kindly feelings.', 
+    #         'usage': 'The benevolent king donated a large sum of money to the orphanage.', 
+    #         'etymology': "From Latin 'bene' (well) + 'volens' (wishing).", 
+    #         'word_break': "Break it down as 'bene-' (good) + 'volent' (wishing) = wishing good things.", 
+    #         'picture': 'Imagine a smiling person giving food to the homeless.', 
+    #         'did_you_know_facts': 'Benevolence is often associated with philanthropy and charitable giving.', 
+    #         'synonyms': 'kind, compassionate, generous, altruistic', 
+    #         'antonyms': 'malevolent, cruel, unkind, selfish', 
+    #         'additional_facts': "Benevolent is often used to describe someone in a position of power who uses that power for good. A related word is 'beneficial,' which means producing good results or effects."
+    #         }
 
-        )
-    else :
-        print("Word 'abandon' already exists in the database.")
+    #     )
+    # else :
+    #     print("Word 'abandon' already exists in the database.")
 
     # Retrieve and print the word details
     word_details = vocab_db_mgr.get_word("benevolent")
@@ -98,6 +126,22 @@ if __name__ == "__main__":
 
     # fetch all words
     print("All words : {}".format(", ".join(vocab_db_mgr.get_all_words())))
+
+    # update words points for test
+    vocab_wordds = [{'word': 'rip', 'points': 15}, 
+                    {'word': 'sadder', 'points': 15}, 
+                    {'word': 'forgery', 'points': 15}, 
+                    {'word': 'clutch', 'points': 15}]
+    update_query = vocab_db_mgr.updated_words_points_for_test(vocab_wordds)
+    print("update_query : {}".format(update_query))
+
+    # fetch all words for test
+    get_all_words_for_test = vocab_db_mgr.get_all_words_for_test()
+    print("get_all_words_for_test : {}".format(get_all_words_for_test))
+
+    # reset words points for test
+    reset_words_points_for_test = vocab_db_mgr.reset_words_points_for_test()
+    print("reset_words_points_for_test : {}".format(reset_words_points_for_test))
 
     # Close the database connection
     vocab_db_mgr.close()
