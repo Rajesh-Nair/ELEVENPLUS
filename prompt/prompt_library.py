@@ -73,7 +73,7 @@ Answers :
 Words :
 {words}
 
-"""
+""")
 
 
 # Central dictionary to register prompts
