@@ -10,6 +10,7 @@ from exception.custom_exception import CustomException
 from src.application.test_generator import test_generator
 from src.application.vocab_db_mgr import VocabDBManager
 from src.application.test_db_mgr import TestDBManager
+from utils.pdf_printer import save_text_to_pdf
 
 class GenerateVocabTest:
     def __init__(self, test_type=1):
@@ -22,39 +23,56 @@ class GenerateVocabTest:
   
     def generate_vocab_test(self):
         try:    
+            # Get test summary based on last run
             test_summary = self.test_db_mgr.get_test_summary(self.test_type)      
             if not test_summary:
                 test_summary = {'testtype': self.test_type,'last_test': 0, 'test_count': 0}
+
+            # Generate picked words
             picked_words = self.generate_random_word_list() 
             log.info(f"Picked words for test: {picked_words}")
+
+            # Generate test
             self.test_generator = test_generator(self.test_type)           
             result = self.test_generator.generate_test(picked_words)
             log.info(f"Generated test: {result}")
             query_status = self.db_mgr.updated_words_points_for_test(picked_words)
             if not query_status:
                 return {"status": "failed", "error": "Failed to update words points for test"}
+            
+            # Generate test pdf
             test_no = test_summary['last_test'] + 1
-            words = ' '.join([word['word'] for word in picked_words])
+            word_list = [word['word'] for word in picked_words]
+            random.shuffle(word_list)
+            words = ' '.join(word_list)
             location = os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}.txt")
-            with open(location, "w", encoding="utf-8") as f:                
-                f.write("\nWords:\n")
-                f.write(words)
-                f.write("\n\n\n\f")  # page break
-                f.write("\nQuestions:\n")
-                f.write('\n'.join(f"{i+1}. {question}" for i, question in enumerate(result["Questions"])))
-                f.write("\n\n\n\f")  # page break
-                f.write('\n'.join(f"{i+1}. {answer}" for i, answer in enumerate(result["Answers"])))
+            questions_to_print = """
+            Words : \n{}\n\n\n
+            Questions : \n{}\n\n\n
+            """.format(words, \
+                       '\n'.join(f"{i+1}. {question}" for i, question in enumerate(result["Questions"])))
+            answers_to_print = """
+            Answers : \n{}\n\n\n
+            """.format('\n'.join(f"{i+1}. {answer}" for i, answer in enumerate(result["Answers"])))
+
+            save_text_to_pdf(questions_to_print, os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}-questions.pdf"))
+            save_text_to_pdf(answers_to_print, os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}-answers.pdf"))
+            
+            # Update test db
             test_data = {'testtype': self.test_type, 
                          'testno': test_no, 
                          'words': words, 
                          'location': location}
             self.test_db_mgr.insert_test(test_data)
+            
             return {"status": "success", "test_count": test_summary['test_count'] + 1}           
 
         except Exception as e:
             log.error(f"Error generating vocab test", error=str(e))
             return {"status": "failed", "error": str(e)}
-        
+
+
+       
     def generate_tests(self):
         self.words_for_test = self.db_mgr.get_all_words_for_test()
         while not self.stop_criteria:
