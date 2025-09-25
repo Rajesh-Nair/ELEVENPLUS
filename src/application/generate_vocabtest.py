@@ -125,7 +125,7 @@ class GenerateVocabTest:
         self.db_mgr.close()
 
 if __name__ == "__main__":
-    test_case = 2
+    test_case = 1
     if test_case == 1:
         generator = GenerateVocabTest(test_type=1)
         result = generator.generate_tests()
