@@ -50,7 +50,7 @@
         <div class="tab-switcher">
           <button class="tab-switch-btn active" data-tab="search">View Word Card</button>
           <button class="tab-switch-btn" data-tab="add">Add Word Card</button>
-          <button class="tab-switch-btn disabled" disabled>More Coming</button>
+          <button class="tab-switch-btn" data-tab="test">View/Generate Test</button>
         </div>
       </div>
       
@@ -101,6 +101,40 @@
             </div>
           </div>
         </div>
+
+        <!-- Test View/Generate Page -->
+        <div id="page-test" class="page-content hidden">
+          <div class="content-card">
+            <div class="test-section">
+              <h3>Vocabulary Test Management</h3>
+              <p class="section-description">View existing tests and generate new vocabulary tests by test type.</p>
+              
+              <!-- Test Controls Section -->
+              <div class="test-controls-section">
+                <h4>Test Operations</h4>
+                <div class="test-controls-form">
+                  <div class="form-field">
+                    <label for="test-type-select">Test Type</label>
+                    <select id="test-type-select" class="test-type-select">
+                      <option value="">Select Test Type</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-actions">
+                    <button id="btn-view-test" class="test-btn primary" disabled>View Tests</button>
+                    <button id="btn-generate-test" class="test-btn secondary" disabled>Generate Test</button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Test Results Section -->
+              <div id="test-results" class="test-results-section hidden">
+                <h4>Test Results</h4>
+                <div id="test-results-content" class="test-results-content"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -146,6 +180,7 @@
     const tabButtons = document.querySelectorAll('.tab-switch-btn');
     const pageSearch = document.getElementById('page-search');
     const pageAdd = document.getElementById('page-add');
+    const pageTest = document.getElementById('page-test');
     const pageTitle = document.getElementById('page-title');
     
     // Add word elements
@@ -154,6 +189,13 @@
     const clearBtn = document.getElementById('btn-clear-input');
     const addResults = document.getElementById('add-results');
     const resultsContent = document.getElementById('results-content');
+    
+    // Test elements
+    const testTypeSelect = document.getElementById('test-type-select');
+    const viewTestBtn = document.getElementById('btn-view-test');
+    const generateTestBtn = document.getElementById('btn-generate-test');
+    const testResults = document.getElementById('test-results');
+    const testResultsContent = document.getElementById('test-results-content');
 
     // State
     let isWordListVisible = false;
@@ -180,6 +222,7 @@
         // Hide all pages
         pageSearch.classList.add('hidden');
         pageAdd.classList.add('hidden');
+        pageTest.classList.add('hidden');
         
         // Show selected page
         const tab = btn.dataset.tab;
@@ -189,6 +232,10 @@
         } else if (tab === 'add') {
           pageAdd.classList.remove('hidden');
           pageTitle.textContent = 'Add Word Card';
+        } else if (tab === 'test') {
+          pageTest.classList.remove('hidden');
+          pageTitle.textContent = 'View/Generate Test';
+          loadTestTypes();
         }
       });
     });
@@ -206,6 +253,7 @@
       // Hide all pages
       pageSearch.classList.add('hidden');
       pageAdd.classList.add('hidden');
+      pageTest.classList.add('hidden');
       
       // Show search page
       pageSearch.classList.remove('hidden');
@@ -215,6 +263,11 @@
     // Add word functionality
     addWordsBtn.addEventListener('click', handleAddWords);
     clearBtn.addEventListener('click', handleClearInput);
+
+    // Test functionality
+    testTypeSelect.addEventListener('change', handleTestTypeChange);
+    viewTestBtn.addEventListener('click', handleViewTest);
+    generateTestBtn.addEventListener('click', handleGenerateTest);
 
     // Handle word list clicks
     wordListUl.addEventListener('click', async (e) => {
@@ -475,6 +528,217 @@
       }
 
       resultsContent.innerHTML = html;
+    }
+
+    // Test Functions
+    async function loadTestTypes() {
+      try {
+        const response = await fetch('/api/vocabtest/summary');
+        const summary = await response.json();
+        
+        if (Array.isArray(summary) && summary.length > 0) {
+          populateTestTypeDropdown(summary);
+        } else {
+          testTypeSelect.innerHTML = '<option value="">No test types available</option>';
+        }
+      } catch (error) {
+        console.error('Error loading test types:', error);
+        testTypeSelect.innerHTML = '<option value="">Error loading test types</option>';
+      }
+    }
+
+    function populateTestTypeDropdown(summary) {
+      testTypeSelect.innerHTML = '<option value="">Select Test Type</option>';
+      summary.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.testtype;
+        option.textContent = `Test Type ${item.testtype} (${item.test_count} tests)`;
+        testTypeSelect.appendChild(option);
+      });
+    }
+
+    function handleTestTypeChange() {
+      const selectedType = testTypeSelect.value;
+      const hasSelection = selectedType !== '';
+      
+      viewTestBtn.disabled = !hasSelection;
+      generateTestBtn.disabled = !hasSelection;
+      
+      if (!hasSelection) {
+        testResults.classList.add('hidden');
+      }
+    }
+
+    async function handleViewTest() {
+      const testType = testTypeSelect.value;
+      if (!testType) return;
+
+      try {
+        viewTestBtn.textContent = 'Loading...';
+        viewTestBtn.disabled = true;
+        testResults.classList.add('hidden');
+
+        const response = await fetch(`/api/vocabtest?testtype=${testType}`);
+        const tests = await response.json();
+
+        displayTestResults(tests, testType);
+        
+      } catch (error) {
+        console.error('Error loading tests:', error);
+        testResultsContent.innerHTML = `
+          <div class="error-message">
+            <h5>❌ Error</h5>
+            <p>Failed to load tests. Please try again.</p>
+          </div>
+        `;
+        testResults.classList.remove('hidden');
+      } finally {
+        viewTestBtn.textContent = 'View Tests';
+        viewTestBtn.disabled = false;
+      }
+    }
+
+    function displayTestResults(tests, testType) {
+      if (!Array.isArray(tests) || tests.length === 0) {
+        testResultsContent.innerHTML = `
+          <div class="no-data">
+            <h5>No Tests Found</h5>
+            <p>No tests available for Test Type ${testType}.</p>
+          </div>
+        `;
+        testResults.classList.remove('hidden');
+        return;
+      }
+
+      // Reverse the order as requested
+      const reversedTests = [...tests].reverse();
+
+      const html = `
+        <div class="test-results-header">
+          <h5>Test Type ${testType} - ${tests.length} Test(s)</h5>
+        </div>
+        <div class="test-table-container">
+          <table class="test-table">
+            <thead>
+              <tr>
+                <th>Test #</th>
+                <th>Location</th>
+                <th>Words</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reversedTests.map((test, index) => `
+                <tr class="test-row">
+                  <td class="test-number-cell">
+                    <span class="test-number">${test.testno}</span>
+                  </td>
+                  <td class="test-location-cell">
+                    <span class="test-location">${extractFilename(test.location)}</span>
+                  </td>
+                  <td class="test-words-cell">
+                    <div class="words-container">
+                      <div class="words-summary">
+                        <span class="word-count">${test.words.split(' ').length} words</span>
+                        <button class="toggle-words-btn" onclick="toggleWords(${index})">
+                          <span class="toggle-icon">▼</span>
+                        </button>
+                      </div>
+                      <div class="words-detail" id="words-${index}" style="display: none;">
+                        <div class="words-grid">
+                          ${test.words.split(' ').map(word => `
+                            <span class="word-item">${word}</span>
+                          `).join('')}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      testResultsContent.innerHTML = html;
+      testResults.classList.remove('hidden');
+    }
+
+    // Function to extract filename from path using regex
+    function extractFilename(path) {
+      // Use regex to extract filename from path (e.g., "data\test_sets\test-1-19.txt" -> "test-1-19")
+      const match = path.match(/test-\d+-\d+/);
+      return match ? match[0] : path.split(/[\\\/]/).pop().replace(/\.txt$/, '');
+    }
+
+    // Global function for toggling words visibility
+    window.toggleWords = function(index) {
+      const wordsDetail = document.getElementById(`words-${index}`);
+      const toggleIcon = document.querySelector(`#words-${index}`).previousElementSibling.querySelector('.toggle-icon');
+      
+      if (wordsDetail.style.display === 'none') {
+        wordsDetail.style.display = 'block';
+        toggleIcon.textContent = '▲';
+      } else {
+        wordsDetail.style.display = 'none';
+        toggleIcon.textContent = '▼';
+      }
+    };
+
+    async function handleGenerateTest() {
+      const testType = testTypeSelect.value;
+      if (!testType) return;
+
+      try {
+        generateTestBtn.textContent = 'Generating...';
+        generateTestBtn.disabled = true;
+
+        const response = await fetch('/api/vocabtest', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          body: testType
+        });
+
+        const result = await response.json();
+        displayGenerateResult(result, testType);
+        
+        // Reload test types to show updated counts
+        await loadTestTypes();
+        
+      } catch (error) {
+        console.error('Error generating test:', error);
+        displayGenerateResult({
+          status: 'failed',
+          error: 'Failed to generate test. Please try again.'
+        }, testType);
+      } finally {
+        generateTestBtn.textContent = 'Generate Test';
+        generateTestBtn.disabled = false;
+      }
+    }
+
+    function displayGenerateResult(result, testType) {
+      let message = '';
+      if (result.status === 'success') {
+        message = `
+          <div class="success-message">
+            <h5>✅ Test Generated Successfully</h5>
+            <p>New test has been created for Test Type ${testType}.</p>
+            <p>Total tests now: ${result.test_count || 'N/A'}</p>
+          </div>
+        `;
+      } else {
+        message = `
+          <div class="error-message">
+            <h5>❌ Generation Failed</h5>
+            <p>${result.error || 'Unknown error occurred'}</p>
+          </div>
+        `;
+      }
+
+      testResultsContent.innerHTML = message;
+      testResults.classList.remove('hidden');
     }
 
     // Initialize

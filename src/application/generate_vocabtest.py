@@ -137,28 +137,36 @@ class GenerateVocabTest:
 
         return picked_words
         
-
+    def retrieve_test(self):
+        return self.test_db_mgr.get_all_tests(self.test_type)
+    
+    def reset_test(self):
+        #reset words points for test
+        reset_words_points_for_test = self.db_mgr.reset_words_points_for_test()
+        # reset test
+        reset_test = self.test_db_mgr.reset_test()
+        return {"status": "success", \
+                "reset_words_points_for_test": reset_words_points_for_test, \
+                "reset_test": reset_test}
 
     def close(self):
         self.db_mgr.close()
 
 if __name__ == "__main__":
-    test_case = 1
+    test_case = 4
     if test_case == 1:
         generator = GenerateVocabTest(test_type=1)
         result = generator.generate_tests()
         print("result : {}".format(result))
     elif test_case == 2:
-        vocab_db_mgr = VocabDBManager(db_path=os.path.join("data","vocab_11plus.db"))
-        # reset words points for test
-        reset_words_points_for_test = vocab_db_mgr.reset_words_points_for_test()
-        print("reset_words_points_for_test : {}".format(reset_words_points_for_test))
-
-        test_db_mgr = TestDBManager(db_path=os.path.join("data","vocab_testset.db"))
-        # reset test
-        reset_test = test_db_mgr.reset_test()
+        generator = GenerateVocabTest(test_type=1)
+        reset_test = generator.reset_test()
         print("reset_test : {}".format(reset_test))
     elif test_case == 3:
         vocab_db_mgr = VocabDBManager(db_path=os.path.join("data","vocab_11plus.db"))
         all_words_for_test = vocab_db_mgr.get_all_words_for_test()
         print("all_words_for_test : {}".format(all_words_for_test))
+    elif test_case == 4:
+        generator = GenerateVocabTest(test_type=1)
+        get_all_tests = generator.retrieve_test()
+        print("get_all_tests : {}".format(get_all_tests))

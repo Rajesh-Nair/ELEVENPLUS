@@ -10,6 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.application.ingest_words import IngestWords
+from src.application.generate_vocabtest import GenerateVocabTest
+from src.application.test_db_mgr import TestDBManager
 
 from logger import GLOBAL_LOGGER as log
 
@@ -79,14 +81,34 @@ async def add_word(request: Request) -> dict:
 
 # request to generate vocab tests
 @app.post("/api/vocabtest")
-def post_test(request: Request) -> dict:
-    pass
-    return None
-    
+async def post_test(request: Request) -> dict:
+    body = await request.body()
+    test_type = body.decode('utf-8')
+    log.info(f"Generating vocab test for type: {test_type}")
+    generator = GenerateVocabTest(test_type=test_type)
+    result = generator.generate_tests()
+    generator.close()   
+    return result
 
+# request to get all tests
+@app.get("/api/vocabtest")
+async def get_test(testtype: int = Query(...)) -> List[Dict[str, Any]]:
+    log.info(f"Getting vocab test for type: {testtype}")
+    generator = GenerateVocabTest(test_type=testtype)
+    result = generator.retrieve_test()
+    generator.close()
+    return result
+
+# request to get test summary
+@app.get("/api/vocabtest/summary")
+async def get_all_test_summary() -> List[Dict[str, Any]]:
+    log.info(f"Getting vocab test summary")
+    test_db_mgr = TestDBManager()
+    result = test_db_mgr.get_all_test_summary()
+    test_db_mgr.close()
+    return result
+    
 
 # command for executing the fast api
 # uvicorn api.main:app --port 8080 --reload    
 # uvicorn api.main:app --host 0.0.0.0 --port 8080 --reload
-
-

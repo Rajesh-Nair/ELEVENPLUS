@@ -38,6 +38,11 @@ class TestDBManager:
             log.error(f"Error inserting test", error=str(e))
             raise CustomException(f"Error inserting test : ", e) from e
 
+    def get_all_test_summary(self):
+        select_query = """SELECT testtype, max(testno) as last_test, count(testno) as test_count 
+        FROM vocab_testset GROUP BY testtype;"""
+        return self.db.query_fetch_all(select_query)
+
     def get_test_summary(self, test_type):
         select_query = """SELECT testtype, max(testno) as last_test, count(testno) as test_count 
         FROM vocab_testset WHERE testtype = ? GROUP BY testtype;"""
