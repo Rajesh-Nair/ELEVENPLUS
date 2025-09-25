@@ -11,7 +11,7 @@ from exception.custom_exception import CustomException
 from src.application.test_generator import test_generator
 from src.application.vocab_db_mgr import VocabDBManager
 from src.application.test_db_mgr import TestDBManager
-from utils.pdf_printer import save_text_to_pdf
+from utils.pdf_printer import save_text_to_pdf, save_dict_list_to_pdf
 
 class GenerateVocabTest:
     def __init__(self, test_type=1):
@@ -46,18 +46,31 @@ class GenerateVocabTest:
             word_list = [word['word'] for word in picked_words]
             random.shuffle(word_list)
             words = ' '.join(word_list)
-            location = os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}.txt")
+            location = os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}.txt")  
+
+            word_cards = [self.db_mgr.get_word(word['word']) for word in picked_words]
+            random.shuffle(word_cards)            
+            definition_words_answers = '|'.join(f"{i+1}. {word['word']}" for i, word in enumerate(word_cards))
+            definitions_to_print = [{'Meaning': word['meaning'], 'Word': word_list[i]} for i, word in enumerate(word_cards)]         
+            usage_questions = '\n'.join(f"{i+1}. {word_question['question']}" for i, word_question in enumerate(result))
+            usage_answers = '|'.join(f"{i+1}. {word_question['word']}" for i, word_question in enumerate(result))
+            
             questions_to_print = """
             Words : \n{}\n\n\n
             Questions : \n{}\n\n\n
             """.format(words, \
-                       '\n'.join(f"{i+1}. {word_question['question']}" for i, word_question in enumerate(result)))
+                       usage_questions)
             answers_to_print = """
-            Answers : \n{}\n\n\n
-            """.format('\n'.join(f"{i+1}. {word_question['word']}" for i, word_question in enumerate(result)))
-
-            save_text_to_pdf(questions_to_print, os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}-questions.pdf"))
-            save_text_to_pdf(answers_to_print, os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}-answers.pdf"))
+            Definitions : \n{}\n
+            Usage : \n{}\n\n\n
+            """.format(definition_words_answers, \
+                       usage_answers)
+            instructions = f"""{self.test_type}-{test_no}-Match the words with their definitions"""
+            
+            # Save test pdf
+            save_dict_list_to_pdf(definitions_to_print, os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}-definitions.pdf"), instructions)
+            save_text_to_pdf(questions_to_print, os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}-usage.pdf"),title=f"test-{self.test_type}-{test_no}-usage")
+            save_text_to_pdf(answers_to_print, os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}-answers.pdf"),title=f"test-{self.test_type}-{test_no}-answers")
             
             # Update test db
             test_data = {'testtype': self.test_type, 
@@ -72,13 +85,18 @@ class GenerateVocabTest:
             log.error(f"Error generating vocab test", error=str(e))
             return {"status": "failed", "error": str(e)}
 
-
+    def retrieve_vocab_cards(self, words):
+        vocab_cards = []
+        for word in words:
+            vocab_card = self.db_mgr.get_word(word)
+            vocab_cards.append(vocab_card)
+        return vocab_cards
        
     def generate_tests(self):
         self.words_for_test = self.db_mgr.get_all_words_for_test()
         while not self.stop_criteria:
             result = self.generate_vocab_test()
-            #self.stop_criteria = True ## For testing purpose
+            self.stop_criteria = True ## For testing purpose - uncomment this for testing purpose
             if result['status'] != "success":
                 log.error(f"Error generating vocab test", error=result['error'])
                 self.stop_criteria = True
