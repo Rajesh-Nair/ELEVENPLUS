@@ -13,7 +13,7 @@ class IngestWords:
         self.db_mgr = VocabDBManager(db_path=os.path.join("data","vocab_11plus.db"))
         
   
-    def ingest_word(self, word):
+    def ingest_word(self, word, critical=False):
         try:
             # Check if word already exists
             existing = self.db_mgr.get_word(word.lower())
@@ -30,7 +30,7 @@ class IngestWords:
             
 
             # Insert into DB
-            self.db_mgr.insert_word(enhanced_info)
+            self.db_mgr.insert_word(enhanced_info, critical)
             log.info(f"Inserted word '{word}' into DB.")
             return {word: "inserted"}
 
@@ -38,11 +38,11 @@ class IngestWords:
             log.error(f"Error ingesting word '{word}'", error=str(e))
             return {word: "failed"}
         
-    def ingest_wordlist(self, wordlist):
+    def ingest_wordlist(self, wordlist, critical=False):
         ingest_counter = defaultdict(list)
         for word in wordlist:
             word = word.lower()
-            status = self.ingest_word(word)
+            status = self.ingest_word(word, critical)
             ingest_counter[status[word]].append(word)
         return dict(ingest_counter)
 

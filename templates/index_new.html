@@ -88,6 +88,14 @@
                   ></textarea>
                 </div>
                 
+                <div class="form-field">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="critical-checkbox" />
+                    <span class="checkmark"></span>
+                    Mark as critical words
+                  </label>
+                </div>
+                
                 <div class="form-actions">
                   <button id="btn-add-words" class="add-btn primary">Add Words</button>
                   <button id="btn-clear-input" class="add-btn secondary">Clear</button>
@@ -185,6 +193,7 @@
     
     // Add word elements
     const wordListInput = document.getElementById('word-list-input');
+    const criticalCheckbox = document.getElementById('critical-checkbox');
     const addWordsBtn = document.getElementById('btn-add-words');
     const clearBtn = document.getElementById('btn-clear-input');
     const addResults = document.getElementById('add-results');
@@ -442,9 +451,17 @@
         addWordsBtn.classList.add('loading');
         addResults.classList.add('hidden');
 
+        const requestData = {
+          word_list: wordList,
+          critical: criticalCheckbox.checked
+        };
+
         const response = await fetch('/api/addword', {
           method: 'POST',
-          body: wordList
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestData)
         });
 
         const result = await response.json();
@@ -467,6 +484,7 @@
     // Clear input function
     function handleClearInput() {
       wordListInput.value = '';
+      criticalCheckbox.checked = false;
       addResults.classList.add('hidden');
     }
 

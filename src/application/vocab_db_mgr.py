@@ -37,9 +37,10 @@ class VocabDBManager:
             log.error("Error creating vocab table", error=str(e))
             raise CustomException("Error creating vocab table : ", e) from e
 
-    def insert_word(self, dict_data):
+    def insert_word(self, dict_data, critical=False):
         try :
             input_data = { col : dict_data[col] for col in self.vocab_columns if col not in ['created_at', 'points'] }
+            input_data['points'] = 10 if not critical else 15
             input_data['word'] = input_data['word'].lower()
             self.db.insert_json("vocab", input_data)
         except Exception as e:

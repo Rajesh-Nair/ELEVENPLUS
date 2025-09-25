@@ -65,15 +65,16 @@ def health() -> Dict[str, str]:
 # Post requests for adding/updating/deleting words can be added here
 @app.post("/api/addword")
 async def add_word(request: Request) -> dict:
-    # Get the raw body as text
-    body = await request.body()
-    word_list = body.decode('utf-8')
-    
-    log.info(f"Adding words: {word_list}")
+    # Parse JSON body
+    body = await request.json()
+    word_list = body.get('word_list', '')
+    critical = body.get('critical', False)
+    log.info(f"Adding words: {word_list} with critical={critical}")
     ingestor = IngestWords()
-    ingest_status = ingestor.ingest_wordlist(word_list.split())
+    words = word_list.split() if word_list else []
+    ingest_status = ingestor.ingest_wordlist(words, critical)
     ingestor.close()
-    return {"total-words":len(word_list.split()), 
+    return {"total-words":len(words), 
             "failed-count": len(ingest_status.get("failed", [])),
             "failed-words": ingest_status.get("failed", []),
             "skipped-count": len(ingest_status.get("exists", [])),
