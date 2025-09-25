@@ -96,7 +96,7 @@ class GenerateVocabTest:
         self.words_for_test = self.db_mgr.get_all_words_for_test()
         while not self.stop_criteria:
             result = self.generate_vocab_test()
-            self.stop_criteria = True ## For testing purpose - uncomment this for testing purpose
+            #self.stop_criteria = True ## For testing purpose - uncomment this for testing purpose
             if result['status'] != "success":
                 log.error(f"Error generating vocab test", error=result['error'])
                 self.stop_criteria = True
