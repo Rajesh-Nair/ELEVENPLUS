@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from enum import Enum
 
 class WordInfo(BaseModel):
@@ -13,9 +13,12 @@ class WordInfo(BaseModel):
     Antonyms: str
     Additional_facts: str
 
-class Test1(BaseModel):
-    Questions: str
-    Answers: str
+class Test1Format(BaseModel):
+    word: str
+    question: str
+
+class Test1(RootModel[list[Test1Format]]):
+    pass
 
 class PromptType(str, Enum):
     RETRIEVE_VOCABINFO = "retrieve_vocabinfo_prompt"

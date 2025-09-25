@@ -3,6 +3,7 @@ import os
 import json
 from collections import defaultdict
 import random
+import numpy as np
 
 from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import CustomException
@@ -33,8 +34,8 @@ class GenerateVocabTest:
             log.info(f"Picked words for test: {picked_words}")
 
             # Generate test
-            self.test_generator = test_generator(self.test_type)           
-            result = self.test_generator.generate_test(picked_words)
+            testgenerator = test_generator(self.test_type)           
+            result = testgenerator.generate_test(picked_words)
             log.info(f"Generated test: {result}")
             query_status = self.db_mgr.updated_words_points_for_test(picked_words)
             if not query_status:
@@ -50,10 +51,10 @@ class GenerateVocabTest:
             Words : \n{}\n\n\n
             Questions : \n{}\n\n\n
             """.format(words, \
-                       '\n'.join(f"{i+1}. {question}" for i, question in enumerate(result["Questions"])))
+                       '\n'.join(f"{i+1}. {word_question['question']}" for i, word_question in enumerate(result)))
             answers_to_print = """
             Answers : \n{}\n\n\n
-            """.format('\n'.join(f"{i+1}. {answer}" for i, answer in enumerate(result["Answers"])))
+            """.format('\n'.join(f"{i+1}. {word_question['word']}" for i, word_question in enumerate(result)))
 
             save_text_to_pdf(questions_to_print, os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}-questions.pdf"))
             save_text_to_pdf(answers_to_print, os.path.join(self.test_loc, f"test-{self.test_type}-{test_no}-answers.pdf"))
@@ -77,7 +78,7 @@ class GenerateVocabTest:
         self.words_for_test = self.db_mgr.get_all_words_for_test()
         while not self.stop_criteria:
             result = self.generate_vocab_test()
-            self.stop_criteria = True ## For testing purpose
+            #self.stop_criteria = True ## For testing purpose
             if result['status'] != "success":
                 log.error(f"Error generating vocab test", error=result['error'])
                 self.stop_criteria = True
@@ -99,11 +100,14 @@ class GenerateVocabTest:
                 weights.append(0.001)
         
         # Pick num_to_pick distinct items
-        picked_indices = random.choices(
-            population=list(range(len(self.words_for_test))),
-            weights=weights,
-            k=num_to_pick
-        )
+        weights = np.array(weights)
+        weights_normalized = weights / weights.sum()
+        picked_indices = np.random.choice(
+            a=list(range(len(self.words_for_test))),
+            size=min(num_to_pick, len(self.words_for_test)),
+            replace=False,  # Ensure distinct items
+            p=weights_normalized
+            )
         
         # Ensure distinct items
         picked_words = []
@@ -121,7 +125,22 @@ class GenerateVocabTest:
         self.db_mgr.close()
 
 if __name__ == "__main__":
-    generator = GenerateVocabTest(test_type=1)
-    result = generator.generate_tests()
-    print("result : {}".format(result))
-    
+    test_case = 2
+    if test_case == 1:
+        generator = GenerateVocabTest(test_type=1)
+        result = generator.generate_tests()
+        print("result : {}".format(result))
+    elif test_case == 2:
+        vocab_db_mgr = VocabDBManager(db_path=os.path.join("data","vocab_11plus.db"))
+        # reset words points for test
+        reset_words_points_for_test = vocab_db_mgr.reset_words_points_for_test()
+        print("reset_words_points_for_test : {}".format(reset_words_points_for_test))
+
+        test_db_mgr = TestDBManager(db_path=os.path.join("data","vocab_testset.db"))
+        # reset test
+        reset_test = test_db_mgr.reset_test()
+        print("reset_test : {}".format(reset_test))
+    elif test_case == 3:
+        vocab_db_mgr = VocabDBManager(db_path=os.path.join("data","vocab_11plus.db"))
+        all_words_for_test = vocab_db_mgr.get_all_words_for_test()
+        print("all_words_for_test : {}".format(all_words_for_test))
