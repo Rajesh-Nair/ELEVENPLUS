@@ -153,7 +153,7 @@ class GenerateVocabTest:
         self.db_mgr.close()
 
 if __name__ == "__main__":
-    test_case = 4
+    test_case = 3
     if test_case == 1:
         generator = GenerateVocabTest(test_type=1)
         result = generator.generate_tests()
@@ -165,7 +165,11 @@ if __name__ == "__main__":
     elif test_case == 3:
         vocab_db_mgr = VocabDBManager(db_path=os.path.join("data","vocab_11plus.db"))
         all_words_for_test = vocab_db_mgr.get_all_words_for_test()
-        print("all_words_for_test : {}".format(all_words_for_test))
+        #print("all_words_for_test : {}".format(all_words_for_test))
+        print("all_words_for_test : {}".format(len(all_words_for_test)))
+        for word in all_words_for_test:
+            if word['points'] == 15:
+                print("word : {}".format(word))
     elif test_case == 4:
         generator = GenerateVocabTest(test_type=1)
         get_all_tests = generator.retrieve_test()

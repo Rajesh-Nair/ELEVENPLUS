@@ -140,13 +140,13 @@ def save_dict_list_to_pdf(data: list[dict], filename: str = "table_output.pdf", 
     
     # Define table style
     table_style = TableStyle([
-        # Header row styling
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        # Header row styling - white background, black text
+        ('BACKGROUND', (0, 0), (-1, 0), colors.white),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),  # Left align for better text wrapping
         
-        # Data rows styling
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        # Data rows styling - white background
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
         
         # Grid lines
         ('GRID', (0, 0), (-1, -1), 1, colors.black),

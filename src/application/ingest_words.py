@@ -17,9 +17,14 @@ class IngestWords:
         try:
             # Check if word already exists
             existing = self.db_mgr.get_word(word.lower())
-            if existing :
+            if existing and not critical :
                 log.info(f"Word '{word}' already exists in DB. Skipping.")
                 return {word: "exists"}
+            elif existing and critical :
+                word_info = [{'word': word, 'points': 15}]
+                self.db_mgr.updated_words_points_for_test(word_info)
+                log.info(f"Word '{word}' already exists in DB. Updating points to 15.")
+                return {word: "points_updated"}
 
             # Enhance with LLM
             enhanced_info = self.vocab_enhancer.enhance_word_info(word)

@@ -467,6 +467,12 @@
         const result = await response.json();
         displayAddResults(result);
         
+        // Clear form fields if successful (no error)
+        if (!result.error) {
+          wordListInput.value = '';
+          criticalCheckbox.checked = false;
+        }
+        
       } catch (error) {
         console.error('Error adding words:', error);
         displayAddResults({
