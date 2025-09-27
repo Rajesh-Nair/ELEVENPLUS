@@ -128,6 +128,18 @@
                     </select>
                   </div>
                   
+                  <div class="form-field hidden" id="num-words-field">
+                    <label for="num-words-select">Number of Words</label>
+                    <select id="num-words-select" class="num-words-select">
+                      <option value="10">10 words</option>
+                      <option value="20" selected>20 words</option>
+                      <option value="40">40 words</option>
+                      <option value="50">50 words</option>
+                      <option value="80">80 words</option>
+                      <option value="100">100 words</option>
+                    </select>
+                  </div>
+                  
                   <div class="form-actions">
                     <button id="btn-view-test" class="test-btn primary" disabled>View Tests</button>
                     <button id="btn-generate-test" class="test-btn secondary" disabled>Generate Test</button>
@@ -201,6 +213,8 @@
     
     // Test elements
     const testTypeSelect = document.getElementById('test-type-select');
+    const numWordsSelect = document.getElementById('num-words-select');
+    const numWordsField = document.getElementById('num-words-field');
     const viewTestBtn = document.getElementById('btn-view-test');
     const generateTestBtn = document.getElementById('btn-generate-test');
     const testResults = document.getElementById('test-results');
@@ -588,6 +602,13 @@
       viewTestBtn.disabled = !hasSelection;
       generateTestBtn.disabled = !hasSelection;
       
+      // Show/hide Number of Words field based on test type
+      if (selectedType === '1') {
+        numWordsField.classList.remove('hidden');
+      } else {
+        numWordsField.classList.add('hidden');
+      }
+      
       if (!hasSelection) {
         testResults.classList.add('hidden');
       }
@@ -712,16 +733,28 @@
       const testType = testTypeSelect.value;
       if (!testType) return;
 
+      // For Test Type 1, get the number of words from the dropdown
+      // For other test types, use default value of 20
+      let numToPick = 20; // Default value
+      if (testType === '1') {
+        numToPick = parseInt(numWordsSelect.value);
+      }
+
       try {
         generateTestBtn.textContent = 'Generating...';
         generateTestBtn.disabled = true;
 
+        const requestData = {
+          test_type: testType,
+          num_to_pick: numToPick
+        };
+
         const response = await fetch('/api/vocabtest', {
           method: 'POST',
           headers: {
-            'Content-Type': 'text/plain'
+            'Content-Type': 'application/json'
           },
-          body: testType
+          body: JSON.stringify(requestData)
         });
 
         const result = await response.json();

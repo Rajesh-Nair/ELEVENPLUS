@@ -83,11 +83,12 @@ async def add_word(request: Request) -> dict:
 # request to generate vocab tests
 @app.post("/api/vocabtest")
 async def post_test(request: Request) -> dict:
-    body = await request.body()
-    test_type = body.decode('utf-8')
-    log.info(f"Generating vocab test for type: {test_type}")
+    body = await request.json()
+    test_type = body.get('test_type')
+    num_to_pick = body.get('num_to_pick', 20)  # Default to 20 if not provided
+    log.info(f"Generating vocab test for type: {test_type} with {num_to_pick} words")
     generator = GenerateVocabTest(test_type=test_type)
-    result = generator.generate_tests()
+    result = generator.generate_tests(num_to_pick=num_to_pick)
     generator.close()   
     return result
 

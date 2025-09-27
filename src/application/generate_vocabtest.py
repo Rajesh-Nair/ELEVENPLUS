@@ -22,7 +22,7 @@ class GenerateVocabTest:
         self.test_db_mgr = TestDBManager(db_path=os.path.join("data","vocab_testset.db"))
         self.test_loc = os.path.join("data","test_sets")
   
-    def generate_vocab_test(self):
+    def generate_vocab_test(self, num_to_pick=20):
         try:    
             # Get test summary based on last run
             test_summary = self.test_db_mgr.get_test_summary(self.test_type)      
@@ -30,7 +30,7 @@ class GenerateVocabTest:
                 test_summary = {'testtype': self.test_type,'last_test': 0, 'test_count': 0}
 
             # Generate picked words
-            picked_words = self.generate_random_word_list() 
+            picked_words = self.generate_random_word_list(num_to_pick=num_to_pick) 
             log.info(f"Picked words for test: {picked_words}")
 
             # Generate test
@@ -92,10 +92,10 @@ class GenerateVocabTest:
             vocab_cards.append(vocab_card)
         return vocab_cards
        
-    def generate_tests(self):
+    def generate_tests(self, num_to_pick=20):
         self.words_for_test = self.db_mgr.get_all_words_for_test()
         while not self.stop_criteria:
-            result = self.generate_vocab_test()
+            result = self.generate_vocab_test(num_to_pick=num_to_pick)
             #self.stop_criteria = True ## For testing purpose - uncomment this for testing purpose
             if result['status'] != "success":
                 log.error(f"Error generating vocab test", error=result['error'])
