@@ -33,7 +33,7 @@
 
         <!-- Show All Words Section -->
         <div class="word-list-section">
-          <h3>All Words</h3>
+          <h3>All Words<span id="word-count" class="word-count hidden"></span></h3>
           <button id="btn-show-all" class="nav-btn secondary">Show All Words</button>
           
           <div id="word-list-container" class="word-list-container hidden">
@@ -193,6 +193,7 @@
     const showAllBtn = document.getElementById('btn-show-all');
     const wordListContainer = document.getElementById('word-list-container');
     const wordListUl = document.getElementById('word-list-ul');
+    const wordCount = document.getElementById('word-count');
     const wordCardScroll = document.getElementById('word-card-scroll');
     const emptyState = document.getElementById('empty-state');
     
@@ -341,6 +342,10 @@
           `<li><a href="#" class="word-link">${word}</a></li>`
         ).join('');
         
+        // Display word count
+        wordCount.textContent = ` (${words.length})`;
+        wordCount.classList.remove('hidden');
+        
         showWordList();
         showAllBtn.textContent = 'Hide All Words';
         isWordListVisible = true;
@@ -361,6 +366,7 @@
     // Hide word list
     function hideWordList() {
       wordListContainer.classList.add('hidden');
+      wordCount.classList.add('hidden');
       showAllBtn.textContent = 'Show All Words';
       isWordListVisible = false;
     }
